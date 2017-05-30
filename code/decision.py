@@ -1,7 +1,7 @@
 import numpy as np
 
 
-# This is where you can build a decision tree for determining throttle, brake and steer 
+# This is where you can build a decision tree for determining throttle, brake and steer
 # commands based on the output of the perception_step() function
 def decision_step(Rover):
 
@@ -11,13 +11,23 @@ def decision_step(Rover):
 
     # Example:
     # Check if we have vision data to make decisions with
+    if Rover.near_sample > 0 and Rover.picking_up == 0:
+        Rover.send_pickup = True
+        Rover.near_sample == False
+    else:
+        #Rover.send_pickup = False
+        Rover.near_sample = 0
+        Rover.picking_up = 0
+        Rover.mode = 'forward'
+
     if Rover.nav_angles is not None:
         # Check for Rover.mode status
-        if Rover.mode == 'forward': 
+
+        if Rover.mode == 'forward':
             # Check the extent of navigable terrain
-            if len(Rover.nav_angles) >= Rover.stop_forward:  
-                # If mode is forward, navigable terrain looks good 
-                # and velocity is below max, then throttle 
+            if len(Rover.nav_angles) >= Rover.stop_forward:
+                # If mode is forward, navigable terrain looks good
+                # and velocity is below max, then throttle
                 if Rover.vel < Rover.max_vel:
                     # Set throttle value to throttle setting
                     Rover.throttle = Rover.throttle_set
@@ -60,7 +70,12 @@ def decision_step(Rover):
                     # Set steer to mean angle
                     Rover.steer = np.clip(np.mean(Rover.nav_angles * 180/np.pi), -15, 15)
                     Rover.mode = 'forward'
-    # Just to make the rover do something 
+        elif Rover.mode == 'turn':
+            Rover.brake=0
+            Rover.throttle = 0
+            Rover.steer = np.clip(np.random.randint(0,1)), -15, 15)
+            Rover.mode = 'stop'
+    # Just to make the rover do something
     # even if no modifications have been made to the code
     else:
         Rover.throttle = Rover.throttle_set
@@ -68,4 +83,3 @@ def decision_step(Rover):
         Rover.brake = 0
 
     return Rover
-
