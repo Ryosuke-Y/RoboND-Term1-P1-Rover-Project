@@ -11,15 +11,7 @@ def decision_step(Rover):
 
     # Example:
     # Check if we have vision data to make decisions with
-    if Rover.near_sample > 0 and Rover.picking_up == 0:
-        Rover.send_pickup = True
-        Rover.near_sample == False
-    else:
-        #Rover.send_pickup = False
-        Rover.near_sample = 0
-        Rover.picking_up = 0
-        Rover.mode = 'forward'
-
+    
     if Rover.nav_angles is not None:
         # Check for Rover.mode status
 
@@ -70,16 +62,13 @@ def decision_step(Rover):
                     # Set steer to mean angle
                     Rover.steer = np.clip(np.mean(Rover.nav_angles * 180/np.pi), -15, 15)
                     Rover.mode = 'forward'
-        elif Rover.mode == 'turn':
-            Rover.brake=0
-            Rover.throttle = 0
-            Rover.steer = np.clip(np.random.randint(0,1)), -15, 15)
-            Rover.mode = 'stop'
     # Just to make the rover do something
     # even if no modifications have been made to the code
     else:
         Rover.throttle = Rover.throttle_set
         Rover.steer = 0
         Rover.brake = 0
+    if Rover.near_sample and Rover.vel == 0 and not Rover.picking_up:
+        Rover.send_pickup = True
 
     return Rover
