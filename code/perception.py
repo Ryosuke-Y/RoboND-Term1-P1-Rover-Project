@@ -31,15 +31,15 @@ def obstacle_thresh(img, rgb_thresh=(160, 160, 160)):
     # Return the binary image
     return color_select
 
-def rock_thresh(img, threshold_low=(100, 100, 0), threshold_high=(160, 160, 40)):
+def rock_thresh(img, threshold_low=(100, 100, 20), threshold_high=(255, 255, 40)):
     # Create an array of zeros same xy size as img, but single channel
     color_select = np.zeros_like(img[:, :, 0])
     # Require that each pixel be above all three threshold values in RGB
     # above_thresh will now contain a boolean array with "True"
     # where threshold was met
-    above_thresh = ~((img[:, :, 0] > threshold_low[0]) & (img[:, :, 0] < threshold_high[0]) \
-                     & (img[:, :, 1] > threshold_low[1]) & (img[:, :, 1] < threshold_high[1]) \
-                     & (img[:, :, 2] > threshold_low[2]) & (img[:, :, 2] < threshold_high[2]))
+    above_thresh = (img[:,:,0] > threshold_low[0]) & (img[:,:,0] < threshold_high[0])  \
+                   & (img[:,:,1] > threshold_low[1]) & (img[:,:,1] < threshold_high[1]) \
+                   & (img[:,:,2] > threshold_low[2]) & (img[:,:,2] < threshold_high[2])
     # Index the array of zeros with the boolean array and set to 1
     color_select[above_thresh] = 1
     return color_select
@@ -74,16 +74,16 @@ def rotate_pix(xpix, ypix, yaw):
     x_rotated = xpix * np.cos(yaw_rad) - ypix * np.sin(yaw_rad)
     y_rotated = xpix * np.sin(yaw_rad) + ypix * np.cos(yaw_rad)
     # Return the result
-    return xpix_rotated, ypix_rotated
+    return x_rotated, y_rotated
 
 # Define a function to perform a translation
 def translate_pix(xpix_rot, ypix_rot, xpos, ypos, scale):
     # TODO:
     # Apply a scaling and a translation
-    x_world = np.int_(xpos + (x_rotated / scale))
-    y_world = np.int_(ypos + (y_rotated / scale))
+    x_world = np.int_(xpos + (xpix_rot / scale))
+    y_world = np.int_(ypos + (ypix_rot / scale))
     # Return the result
-    return xpix_translated, ypix_translated
+    return x_world, y_world
 
 # Define a function to apply rotation and translation (and clipping)
 # Once you define the two functions above this function should work
@@ -125,25 +125,26 @@ def perception_step(Rover):
     warped = perspect_transform(Rover.img, source, destination)
 
     # 3) Apply color threshold to identify navigable terrain/obstacles/rock samples
-    terrain_thresh = color_thresh(warped)
-    obstacles_thresh = obstacles_thresh(warped)
-    rocks_thresh = rocks_thresh(warped)
+    threshed_terrain = color_thresh(warped)
+    threshed_obstacle = obstacle_thresh(warped)
+    threshed_rocks = rock_thresh(warped)
 
     # 4) Update Rover.vision_image (this will be displayed on left side of screen)
         # Example: Rover.vision_image[:,:,0] = obstacle color-thresholded binary image
         #          Rover.vision_image[:,:,1] = rock_sample color-thresholded binary image
         #          Rover.vision_image[:,:,2] = navigable terrain color-thresholded binary image
-    Rover.vision_image[:,:,0] = obstacles_thresh
-    Rover.vision_image[:,:,1] = rocks_thresh
-    Rover.vision_image[:,:,2] = terrain_thresh
+    Rover.vision_image[:,:,0] = threshed_obstacle
+    Rover.vision_image[:,:,1] = threshed_rocks
+    Rover.vision_image[:,:,2] = threshed_terrain
 
     # 5) Convert map image pixel values to rover-centric coords
-    terrain_x_pix, terrain_y_pix = rover_coords(terrain_thresh)
-    obstacles_x_pix, obstacles_y_pix = rover_coords(obstacles_thresh)
-    rocks_x_pix, rocks_y_pix = rover_coords(rocks_thresh)
+    terrain_x_pix, terrain_y_pix = rover_coords(threshed_terrain)
+    obstacles_x_pix, obstacles_y_pix = rover_coords(threshed_obstacle)
+    rocks_x_pix, rocks_y_pix = rover_coords(threshed_rocks)
     rover_x_pos, rover_y_pos = Rover.pos
 
     # 6) Convert rover-centric pixel values to world coordinates
+    scale = 10
     terrain_x_world, terrain_y_world = pix_to_world(terrain_x_pix, terrain_y_pix, rover_x_pos, rover_y_pos, Rover.yaw, Rover.worldmap.shape[0], scale)
     obstacles_x_world, obstacles_y_world = pix_to_world(obstacles_x_pix, obstacles_y_pix, rover_x_pos, rover_y_pos, Rover.yaw, Rover.worldmap.shape[0], scale)
     rock_x_world, rock_y_world = pix_to_world(rocks_x_pix, rocks_y_pix, rover_x_pos, rover_y_pos, Rover.yaw, Rover.worldmap.shape[0], scale)
@@ -152,9 +153,10 @@ def perception_step(Rover):
         # Example: Rover.worldmap[obstacle_y_world, obstacle_x_world, 0] += 1
         #          Rover.worldmap[rock_y_world, rock_x_world, 1] += 1
         #          Rover.worldmap[navigable_y_world, navigable_x_world, 2] += 1
-    Rover.worldmap[obstacles_y_world, obstacles_x_world, 0] += 1
-    Rover.worldmap[rock_y_world, rock_x_world, 1] += 1
-    Rover.worldmap[terrain_y_world, terrain_x_world, 2] += 1
+    if (Rover.pitch < 0.5) and (Rover.roll < 350):
+        Rover.worldmap[obstacles_y_world, obstacles_x_world, 0] += 1
+        Rover.worldmap[rock_y_world, rock_x_world, 1] += 1
+        Rover.worldmap[terrain_y_world, terrain_x_world, 2] += 1
 
     # 8) Convert rover-centric pixel positions to polar coordinates
     dist, angles = to_polar_coords(terrain_x_pix, terrain_y_pix)
@@ -165,8 +167,6 @@ def perception_step(Rover):
         # Rover.nav_dists = rover_centric_pixel_distances
         # Rover.nav_angles = rover_centric_angles
 
-    Rover.nav_dists = dist
-    Rover.nav_angles = angles
     Rover.nav_dists = dist
     Rover.nav_angles = angles
     Rover.rock_dist = rock_dist
