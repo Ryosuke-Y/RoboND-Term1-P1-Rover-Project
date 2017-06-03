@@ -80,8 +80,7 @@ class RoverState():
         self.obstacles_dist = None
         self.obstacles_angles = None
         self.rocks_collected = 0
-        self.forward_ts = time.time()
-        self.backward_ts = None
+        self.count = 0
 # Initialize our rover
 Rover = RoverState()
 

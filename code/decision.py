@@ -93,7 +93,7 @@ def decision_step(Rover):
             Rover.brake = Rover.brake_set
 
     elif Rover.rock_angles is not None and len(Rover.rock_angles) > 1:
-        Rover.throttle = 0.1
+        Rover.throttle = 0.05
         # Set steering to average angle clipped to the range +/- 15
         Rover.steer = np.clip(np.mean(Rover.rock_angles * 180 / np.pi), -15, 15)
 
@@ -126,6 +126,14 @@ def decision_step(Rover):
                     Rover.brake = Rover.brake_set
                     Rover.steer = 0
                     Rover.mode = 'stop'
+            elif Rover.steer > 5:
+                Rover.count += 1
+
+            elif Rover.steer <= 5:
+                Rover.count = 0
+
+            elif Rover.count > 150:
+                Rover.mode = 'looping'
 
         # If we're already in "stop" mode then make different decisions
         elif Rover.mode == 'stop':
@@ -158,6 +166,16 @@ def decision_step(Rover):
             Rover.throttle = 0
             Rover.steer = -15 # Could be more clever here about which way to turn
             Rover.mode = 'forward'
+
+        elif Rover.mode == 'looping':
+            Rover.count = 0
+            Rover.throttle = 0
+            Rover.steer = -15
+            Rover.brake = 0
+            Rover.count += 1
+            if Rover.count > 50:
+                Rover.mode = 'forward'
+                Rover.count = 0
 
     # Just to make the rover do something
     # even if no modifications have been made to the code

@@ -133,18 +133,19 @@ def perception_step(Rover):
         # Example: Rover.vision_image[:,:,0] = obstacle color-thresholded binary image
         #          Rover.vision_image[:,:,1] = rock_sample color-thresholded binary image
         #          Rover.vision_image[:,:,2] = navigable terrain color-thresholded binary image
-    Rover.vision_image[:,:,0] = threshed_obstacle
-    Rover.vision_image[:,:,1] = threshed_rocks
-    Rover.vision_image[:,:,2] = threshed_terrain
+    Rover.vision_image[:,:,0] = threshed_obstacle * 255
+    Rover.vision_image[:,:,1] = threshed_rocks * 255
+    Rover.vision_image[:,:,2] = threshed_terrain * 255
 
     # 5) Convert map image pixel values to rover-centric coords
     terrain_x_pix, terrain_y_pix = rover_coords(threshed_terrain)
     obstacles_x_pix, obstacles_y_pix = rover_coords(threshed_obstacle)
     rocks_x_pix, rocks_y_pix = rover_coords(threshed_rocks)
     rover_x_pos, rover_y_pos = Rover.pos
+    rover_yaw  = Rover.yaw
 
     # 6) Convert rover-centric pixel values to world coordinates
-    scale = 10
+    scale = 20
     terrain_x_world, terrain_y_world = pix_to_world(terrain_x_pix, terrain_y_pix, rover_x_pos, rover_y_pos, Rover.yaw, Rover.worldmap.shape[0], scale)
     obstacles_x_world, obstacles_y_world = pix_to_world(obstacles_x_pix, obstacles_y_pix, rover_x_pos, rover_y_pos, Rover.yaw, Rover.worldmap.shape[0], scale)
     rock_x_world, rock_y_world = pix_to_world(rocks_x_pix, rocks_y_pix, rover_x_pos, rover_y_pos, Rover.yaw, Rover.worldmap.shape[0], scale)
@@ -153,8 +154,8 @@ def perception_step(Rover):
         # Example: Rover.worldmap[obstacle_y_world, obstacle_x_world, 0] += 1
         #          Rover.worldmap[rock_y_world, rock_x_world, 1] += 1
         #          Rover.worldmap[navigable_y_world, navigable_x_world, 2] += 1
-    if (Rover.roll < 3 or Rover.roll > 350) \
-            or (Rover.pitch < 3 or Rover.pitch > 350):
+    if (Rover.roll < 3 or Rover.roll > 357) \
+            or (Rover.pitch < 3 or Rover.pitch > 357):
         Rover.worldmap[obstacles_y_world, obstacles_x_world, 0] += 1
         Rover.worldmap[rock_y_world, rock_x_world, 1] += 1
         Rover.worldmap[terrain_y_world, terrain_x_world, 2] += 1
