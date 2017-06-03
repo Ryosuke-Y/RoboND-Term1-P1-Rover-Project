@@ -31,7 +31,7 @@ def obstacle_thresh(img, rgb_thresh=(160, 160, 160)):
     # Return the binary image
     return color_select
 
-def rock_thresh(img, threshold_low=(100, 100, 20), threshold_high=(255, 255, 40)):
+def rock_thresh(img, threshold_low=(100, 100, 20), threshold_high=(210, 210, 55)):
     # Create an array of zeros same xy size as img, but single channel
     color_select = np.zeros_like(img[:, :, 0])
     # Require that each pixel be above all three threshold values in RGB
@@ -153,7 +153,8 @@ def perception_step(Rover):
         # Example: Rover.worldmap[obstacle_y_world, obstacle_x_world, 0] += 1
         #          Rover.worldmap[rock_y_world, rock_x_world, 1] += 1
         #          Rover.worldmap[navigable_y_world, navigable_x_world, 2] += 1
-    if (Rover.pitch < 0.5) and (Rover.roll < 350):
+    if (Rover.roll < 3 or Rover.roll > 350) \
+            or (Rover.pitch < 3 or Rover.pitch > 350):
         Rover.worldmap[obstacles_y_world, obstacles_x_world, 0] += 1
         Rover.worldmap[rock_y_world, rock_x_world, 1] += 1
         Rover.worldmap[terrain_y_world, terrain_x_world, 2] += 1
