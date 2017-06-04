@@ -167,7 +167,7 @@ def decision_step(Rover):
             print('STUCK')
             Rover.brake = 0
             Rover.throttle = 0
-            Rover.steer = -15 # Could be more clever here about which way to turn
+            Rover.steer = -15
             Rover.mode = 'forward'
 
         elif Rover.mode == 'looping':
